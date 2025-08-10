@@ -127,7 +127,7 @@ Based on the instructions above and the source information below, generate the c
         structure_block = (
             f"<details>\n"
             f"<summary>Click to view the repository structure</summary>\n\n"
-            f"```\n{data.repo_structure}\n```\n\n"
+            f"<pre><code>{data.repo_structure}</code></pre>\n"
             f"</details>"
         )
 
