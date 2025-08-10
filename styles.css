@@ -191,3 +191,26 @@ button:disabled {
 #readme li {
   margin-bottom: 0.5em;
 }
+
+/* --- Footer Styles --- */
+
+footer {
+  text-align: center;
+  margin-top: 40px;
+  padding: 20px;
+  color: #888;
+  border-top: 1px solid #333;
+}
+
+footer a {
+  /* This is the new color for the link */
+  color: #58a6ff; 
+  font-weight: bold; /* Making it bold also helps it stand out */
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+footer a:hover {
+  color: #fff; 
+  text-decoration: underline;
+}

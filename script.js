@@ -128,7 +128,7 @@ async function generateReadmeWithBackend() {
         const repoStructureText = repoStructureElement.innerText || repoStructureElement.textContent;
 
 
-        const res = await fetch('http://localhost:8000/generate-readme', {
+        const res = await fetch('https://ketaki-readme-generator-backend.onrender.com/generate-readme', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ repo_url: repoUrl, existing_readme: originalReadmeContent, repo_structure: repoStructureText, file_contents: analyzedFileContents })
