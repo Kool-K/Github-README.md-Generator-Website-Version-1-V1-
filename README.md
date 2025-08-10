@@ -34,8 +34,10 @@ This project is a web-based application designed to automatically generate profe
 ## 📂 Repository Structure
 
 <details>
+
 <summary>Click to view the repository structure</summary>
-` ```
+
+```
 .
 ├── .gitignore
 ├── backend/
@@ -47,7 +49,8 @@ This project is a web-based application designed to automatically generate profe
 ├── script.js
 ├── styles.css
 └── venv/
-` ```
+```
+
 </details>
 
 ## 🚀 Getting Started
