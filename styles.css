@@ -118,7 +118,8 @@ button:disabled {
   border-top-color: #fff;
   width: 1em;
   height: 1em;
-  animation: spin 1s ease-infinite;
+  /* --- FIX #3: Corrected the animation property --- */
+  animation: spin 1s linear infinite;
   margin-right: 8px;
   vertical-align: middle; /* Aligns spinner with text */
 }
@@ -132,4 +133,61 @@ button:disabled {
   height: 200px; /* Give it some height */
   font-size: 1.2em;
   color: #888;
+}
+
+
+/* --- README Content Formatting --- */
+/* This targets headers ONLY inside the readme display area */
+
+#readme h1 {
+  font-size: 2em;
+  border-bottom: 2px solid #444;
+  padding-bottom: 0.3em;
+  margin-bottom: 0.8em;
+}
+
+#readme h2 {
+  font-size: 1.6em;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.2em;
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
+}
+
+#readme h3 {
+  font-size: 1.3em;
+  margin-top: 1.2em;
+  margin-bottom: 0.6em;
+}
+
+#readme p {
+  line-height: 1.6;
+}
+
+/* Style for inline code `like this` */
+#readme code {
+  background-color: #161b22;
+  color: #c9d1d9;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+/* Style for code blocks ```like this``` */
+#readme pre > code {
+  display: block;
+  padding: 1em;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  white-space: pre;
+  font-size: 0.9em;
+}
+
+#readme ul, #readme ol {
+  padding-left: 2em;
+}
+
+#readme li {
+  margin-bottom: 0.5em;
 }

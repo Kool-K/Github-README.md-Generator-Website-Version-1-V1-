@@ -4,87 +4,138 @@ import os
 import google.generativeai as genai
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import List, Optional
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
 # Load environment variables from backend/.env
 load_dotenv(dotenv_path="backend/.env")
-
-# Configure the Gemini API client
 try:
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 except Exception as e:
     print(f"Error configuring Gemini API: {e}")
-    # You might want to handle this more gracefully
-    # For now, we'll let it raise an error if the key is missing/invalid
 
+# Initialize FastAPI app
 app = FastAPI()
 
-# Setup CORS middleware to allow your frontend to communicate with this backend
+# Setup CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Pydantic model for a single file's content
+class FileContent(BaseModel):
+    path: str
+    content: str
+
+# The main request model that the frontend will send
 class ReadmeRequest(BaseModel):
     repo_url: str
-    # This is a great improvement we'll discuss below!
-    repo_structure: str | None = None
-    existing_readme: str | None = None
+    repo_structure: Optional[str] = None
+    existing_readme: Optional[str] = None
+    file_contents: Optional[List[FileContent]] = None
 
+# The API endpoint to generate the README
 @app.post("/generate-readme")
 async def generate_readme(data: ReadmeRequest):
-    # Suggesting a slightly more powerful and descriptive model that's still in the free tier
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-    # Constructing a more detailed prompt for better results
-    prompt = (
-        "You are an expert software developer and technical writer. Your task is to generate a detailed, professional, and well-structured README.md file for a GitHub repository. "
-        "The README should be clear, concise, and provide all necessary information for a new user or contributor.\n\n"
-    )
+    # --- FINAL PROMPT V4: CLEAR SEPARATION OF INSTRUCTIONS AND TEMPLATE ---
+    prompt = f"""
+**// PART 1: THE BRIEFING & INSTRUCTIONS //**
 
-    if data.repo_url:
-        prompt += f"**Repository URL:**\n`{data.repo_url}`\n\n"
+You are an expert technical writer and senior software developer with a strict focus on accuracy and formatting. Your mission is to create an exceptional README.md file.
 
-    # This is the key improvement! Using the repository structure for context.
-    if data.repo_structure:
-        prompt += f"**Repository Structure:**\n```\n{data.repo_structure}\n```\n\n"
+**Core Directive:** Your primary source of truth is the content of the provided code files. Do not invent features or technologies. Analyze the code and document what is actually there.
 
-    if data.existing_readme:
-        prompt += (
-            f"**Existing README Content:**\n---\n{data.existing_readme}\n---\n\n"
-            "Please improve the existing README. Make it more detailed, better organized, and more professional. Fill in any missing sections like Installation, Usage, etc., based on the repository structure."
-        )
+**Tone of Voice:** Write with confidence and technical authority. Avoid all hedging language like "it seems", "likely", or "probably".
+
+**Formatting Rule:** You MUST use the specified emoji at the beginning of every H1, H2, and H3 header. This is a strict, non-negotiable requirement.
+
+**Section-by-Section Instructions:**
+- **Project Title:** Create a concise and accurate title based on the repository's purpose.
+- **Description:** Synthesize the project's primary purpose from its code.
+- **Features:** Derive features *directly* from the code. Do not write placeholder text like '[Feature 1]'. Generate the actual features.
+- **Tech Stack:** Rely *exclusively* on the provided dependency files to list the language and key libraries.
+- **Getting Started:** Infer the exact commands and necessary software from the dependency files and common entry-point files. Provide concrete, copy-pasteable commands.
+- **License:** Default to mentioning the MIT License as a placeholder.
+
+**// PART 2: THE CLEAN TEMPLATE TO FILL //**
+
+Based on the instructions above and the source information below, generate the complete README by filling in this exact template.
+
+---
+# 📛 Project Title
+
+## 📜 Description
+
+## ✨ Features
+
+## 🛠️ Tech Stack
+
+## 📂 Repository Structure
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+### ⚙️ Installation
+
+### ▶️ How to Run
+
+## 📄 License
+---
+
+**// PART 3: SOURCE INFORMATION FOR YOUR ANALYSIS //**
+
+**Repository URL:** `{data.repo_url}`
+
+**Existing README (if any, to improve upon):**
+{data.existing_readme if data.existing_readme else "No existing README provided. Create one from scratch."}
+
+**Key File Contents for Analysis:**
+"""
+
+    if data.file_contents:
+        prompt += "This is your primary source of truth:\n\n"
+        for file in data.file_contents:
+            prompt += f"--- START OF FILE: `{file.path}` ---\n"
+            prompt += f"```\n{file.content}\n```\n"
+            prompt += f"--- END OF FILE: `{file.path}` ---\n\n"
     else:
-        prompt += (
-            "No existing README was found. Create a comprehensive README from scratch. "
-            "Based on the repository structure and common practices, please include sections like: \n"
-            "- Project Title\n"
-            "- Description\n"
-            "- Features\n"
-            "- Tech Stack\n"
-            "- Installation Guide\n"
-            "- How to Run\n"
-            "- License\n"
-        )
-    
-    prompt += "\n\n**Output:**\nPlease provide the complete README content in Markdown format."
+        prompt += "No file contents were provided. Base your analysis on the repository URL and file structure.\n"
+
+    # Add the unique placeholder for repo structure here
+    prompt += "\n---REPO_STRUCTURE_PLACEHOLDER---\n"
 
     try:
-        # Generate content using the Gemini API
         response = model.generate_content(prompt)
+        if not response.text:
+            raise HTTPException(status_code=500, detail="API returned an empty response.")
         
-        # Access the generated text
         generated_readme = response.text.strip()
         
-        return {"readme": generated_readme}
+        if generated_readme.startswith("```markdown"):
+            generated_readme = generated_readme[10:-3].strip()
+        elif generated_readme.startswith("```"):
+            generated_readme = generated_readme[3:-3].strip()
+
+        structure_block = (
+            f"<details>\n"
+            f"<summary>Click to view the repository structure</summary>\n\n"
+            f"```\n{data.repo_structure}\n```\n\n"
+            f"</details>"
+        )
+
+        # Replace the placeholder with the actual repo structure block
+        final_readme = generated_readme.replace("---REPO_STRUCTURE_PLACEHOLDER---", structure_block)
+
+        return {"readme": final_readme}
 
     except Exception as e:
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail=f"An error occurred with the Gemini API: {str(e)}")
-
-# To run the app, navigate to your project root in the terminal and run:
-# uvicorn backend.app:app --reload

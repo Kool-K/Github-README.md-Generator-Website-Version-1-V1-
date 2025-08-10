@@ -1,149 +1,199 @@
+// script.js - Final Version with UX Improvements
+
+// Global variables to hold the state
 let originalReadmeContent = "";
+let analyzedFileContents = [];
+let currentRepoUrl = ""; // To track the currently loaded repo
 
-async function fetchRepo() {
-    const repoUrl = document.getElementById('repoUrl').value.trim();
-    if (!repoUrl) return showToast("Please enter a repository URL");
+/**
+ * The main workhorse function. Fetches all data for a given repo URL
+ * and updates the UI accordingly.
+ */
+// In script.js, replace the processRepository function with this final, robust version.
 
-    const repoPath = repoUrl.replace("https://github.com/", "").replace(".git", "");
-    let branch = "main";
+async function processRepository(repoUrl) {
+    currentRepoUrl = repoUrl; 
+    originalReadmeContent = "";
+    analyzedFileContents = [];
+    const repoStructureDiv = document.getElementById('repo-structure');
+    const readmeDiv = document.getElementById('readme');
+    repoStructureDiv.innerHTML = '<code>Fetching repository tree...</code>';
+    readmeDiv.innerHTML = '<em>Loading repository data...</em>';
+
+    let repoPath;
+    let branch;
 
     try {
-        // First, check if repo exists
+        // --- FIX: Robust URL Parsing ---
+        // Use the URL object to reliably get the path, regardless of http/https/www/.git
+        const urlObject = new URL(repoUrl);
+        // urlObject.pathname gives "/Kool-K/MoodMuse.git"
+        // We remove the leading slash and the trailing .git
+        repoPath = urlObject.pathname.substring(1).replace(/\.git$/, "");
+
         const repoCheck = await fetch(`https://api.github.com/repos/${repoPath}`);
         if (!repoCheck.ok) {
-            showToast("🚫 Repository does not exist");
-            return;
+            // This handles both "Not Found" and rate limit errors from the API
+            const errorData = await repoCheck.json();
+            const errorMessage = errorData.message || "Repository does not exist or is private";
+            showToast(`🚫 ${errorMessage}`);
+            repoStructureDiv.innerHTML = '<code>Could not fetch repository.</code>';
+            currentRepoUrl = ""; 
+            return false;
         }
-
-        let branchCheck = await fetch(`https://api.github.com/repos/${repoPath}/branches/main`);
-        if (!branchCheck.ok) {
-            branchCheck = await fetch(`https://api.github.com/repos/${repoPath}/branches/master`);
-            if (branchCheck.ok) branch = "master";
-        }
+        
+        const repoData = await repoCheck.json();
+        branch = repoData.default_branch;
 
         const contentsRes = await fetch(`https://api.github.com/repos/${repoPath}/git/trees/${branch}?recursive=1`);
         const contentsData = await contentsRes.json();
 
         if (contentsData.tree) {
+            repoStructureDiv.innerHTML = '<code>Building file tree and analyzing key files...</code>';
             const paths = contentsData.tree.map(file => file.path);
-
-            function generateTreeStructure(paths) {
-                const tree = {};
-
-                // Build nested object from file paths
-                paths.forEach(path => {
-                    const parts = path.split('/');
-                    let current = tree;
-                    parts.forEach((part, index) => {
-                        if (!current[part]) {
-                            current[part] = (index === parts.length - 1) ? null : {};
-                        }
-                        current = current[part];
-                    });
-                });
-
-                // Render ASCII tree with dotted lines
-                function renderTree(obj, prefix = '') {
-                    const entries = Object.entries(obj);
-                    return entries.map((entry, index) => {
-                        const [name, value] = entry;
-                        const isLast = index === entries.length - 1;
-                        const connector = isLast ? '└── ' : '├── ';
-                        let line = `${prefix}${connector}${name}`;
-                        if (value && typeof value === 'object') {
-                            line += '\n' + renderTree(value, prefix + (isLast ? '    ' : '│   '));
-                        }
-                        return line;
-                    }).join('\n');
-                }
-
-                return renderTree(tree);
-            }
-
             const treeFormatted = generateTreeStructure(paths);
+            repoStructureDiv.innerHTML = `<pre><code>${treeFormatted}</code></pre>`;
 
-            document.getElementById('repo-structure').innerHTML =
-                `<pre><code>${treeFormatted}</code></pre>`;
+            const keyFilesToRead = ['package.json', 'requirements.txt', 'pom.xml', 'go.mod', 'pyproject.toml', 'app.py', 'main.py', 'index.js', 'server.js', 'main.go', 'main.java'];
+            const filesToAnalyze = contentsData.tree.filter(file => keyFilesToRead.includes(file.path.split('/').pop()) && file.type === 'blob' && file.size < 15000);
+            const filePromises = filesToAnalyze.map(file => fetch(`https://raw.githubusercontent.com/${repoPath}/${branch}/${file.path}`).then(res => res.text()).then(text => ({ path: file.path, content: text })));
+            analyzedFileContents = await Promise.all(filePromises);
+            
+            const readmeFile = contentsData.tree.find(file => file.path.toLowerCase() === 'readme.md');
+
+            if (readmeFile) {
+                const readmeRes = await fetch(`https://raw.githubusercontent.com/${repoPath}/${branch}/${readmeFile.path}`);
+                if (readmeRes.ok) {
+                    originalReadmeContent = await readmeRes.text();
+                    renderMarkdown(originalReadmeContent);
+                }
+            } else {
+                readmeDiv.innerHTML = "<em>No README.md found in this repo. Ready to generate.</em>";
+            }
         }
-
-
-        const readmeRes = await fetch(`https://raw.githubusercontent.com/${repoPath}/${branch}/README.md`);
-        if (readmeRes.ok) {
-            originalReadmeContent = await readmeRes.text();
-            renderMarkdown(originalReadmeContent);
-        } else {
-            document.getElementById('readme').innerHTML = "<em>No README.md found in this repo.</em>";
-        }
+        return true;
     } catch (error) {
+        // This catch block handles network errors or if the URL is completely invalid
         console.error(error);
-        showToast("⚠️ Error fetching repository data");
+        repoStructureDiv.innerHTML = '<code>Error fetching repository data. Invalid URL?</code>';
+        showToast("⚠️ Error fetching repository data. Check the URL and your connection.");
+        currentRepoUrl = ""; 
+        return false;
     }
 }
 
-// script.js
+/**
+ * --- UPDATED "Load Repo Info" button logic ---
+ * This function now simply triggers a fresh fetch and display of the repo's original state.
+ */
+async function fetchRepo() {
+    const repoUrl = document.getElementById('repoUrl').value.trim();
+    if (!repoUrl) return showToast("Please enter a repository URL");
+    
+    await processRepository(repoUrl);
+}
 
-// script.js
-
+/**
+ * --- UPDATED "Generate README" button logic ---
+ * This function ensures the latest data is fetched, then calls the AI.
+ */
 async function generateReadmeWithBackend() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
     if (!repoUrl) return showToast("Please enter a repository URL");
 
-    // Get references to the UI elements we'll be changing
     const generateBtn = document.getElementById('generate-btn');
     const readmeDiv = document.getElementById('readme');
-    const originalButtonHtml = generateBtn.innerHTML; // Save the original button text
+    const originalButtonHtml = generateBtn.innerHTML;
+
+    // Start the loading animation immediately for better UX
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = `<span class="spinner"></span>Processing...`;
+    
+    // Always process the repo first to ensure data is fresh.
+    // The processRepository function will handle its own loading messages.
+    const success = await processRepository(repoUrl);
+    if (!success) { 
+        // If fetching failed, reset the button and stop.
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = originalButtonHtml;
+        return;
+    }
 
     try {
-        // --- START LOADING STATE ---
-        generateBtn.disabled = true;
+        // Now that data is fetched, update button text to show generation phase
         generateBtn.innerHTML = `<span class="spinner"></span>Generating...`;
-        readmeDiv.innerHTML = `
-            <div class="loader-container">
-                <span class="spinner" style="width: 3em; height: 3em; border-width: 4px;"></span>
-                <p>Generating your README, please wait...</p>
-            </div>
-        `;
+        readmeDiv.innerHTML = `<div class="loader-container"><span class="spinner" style="width: 3em; height: 3em; border-width: 4px;"></span><p>Generating your README, please wait...</p></div>`;
 
-        const existingReadme = originalReadmeContent || null;
-        const repoStructure = document.getElementById('repo-structure').innerText;
+        const repoStructureElement = document.getElementById('repo-structure');
+        const repoStructureText = repoStructureElement.innerText || repoStructureElement.textContent;
+
 
         const res = await fetch('http://localhost:8000/generate-readme', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                repo_url: repoUrl,
-                existing_readme: existingReadme,
-                repo_structure: repoStructure
-            })
+            body: JSON.stringify({ repo_url: repoUrl, existing_readme: originalReadmeContent, repo_structure: repoStructureText, file_contents: analyzedFileContents })
         });
 
         if (!res.ok) {
             const err = await res.json();
             showToast(`Error: ${err.detail}`);
-            // If there's an error, clear the loading message
             readmeDiv.innerHTML = "<em>An error occurred. Please try again.</em>";
             return;
         }
 
         const data = await res.json();
-        originalReadmeContent = data.readme;
-        renderMarkdown(data.readme);
+        
+        let readmeText = data.readme;
+        if (readmeText.startsWith("```markdown\n")) {
+            readmeText = readmeText.substring(10, readmeText.length - 3).trim();
+        } else if (readmeText.startsWith("```")) {
+            readmeText = readmeText.substring(3, readmeText.length - 3).trim();
+        }
+        
+        originalReadmeContent = readmeText;
+        renderMarkdown(readmeText);
 
     } catch (error) {
         console.error(error);
         showToast("Error generating README from backend");
         readmeDiv.innerHTML = "<em>A critical error occurred. Check the console.</em>";
     } finally {
-        // --- END LOADING STATE ---
-        // This block runs no matter what, ensuring the button is always re-enabled.
         generateBtn.disabled = false;
         generateBtn.innerHTML = originalButtonHtml;
     }
 }
 
+// --- All helper functions below remain the same ---
+
 function renderMarkdown(content) {
     const readmeDiv = document.getElementById('readme');
     readmeDiv.innerHTML = marked.parse(content);
+}
+
+function generateTreeStructure(paths) {
+    const tree = {};
+    paths.forEach(path => {
+        const parts = path.split('/');
+        let current = tree;
+        parts.forEach((part, index) => {
+            if (!current[part]) { current[part] = (index === parts.length - 1) ? null : {}; }
+            current = current[part];
+        });
+    });
+    function renderTree(obj, prefix = '') {
+        const entries = Object.entries(obj);
+        return entries.map((entry, index) => {
+            const [name, value] = entry;
+            const isLast = index === entries.length - 1;
+            const connector = isLast ? '└── ' : '├── ';
+            let line = `${prefix}${connector}${name}`;
+            if (value && typeof value === 'object') {
+                line += '\n' + renderTree(value, prefix + (isLast ? '    ' : '│   '));
+            }
+            return line;
+        }).join('\n');
+    }
+    return renderTree(tree);
 }
 
 function editReadme() {
@@ -152,14 +202,12 @@ function editReadme() {
     textarea.value = originalReadmeContent || "";
     textarea.style.width = "100%";
     textarea.style.height = "300px";
-
     const saveBtn = document.createElement('button');
     saveBtn.textContent = "Save";
     saveBtn.onclick = () => {
         originalReadmeContent = textarea.value;
         renderMarkdown(originalReadmeContent);
     };
-
     readmeDiv.innerHTML = "";
     readmeDiv.appendChild(textarea);
     readmeDiv.appendChild(saveBtn);
@@ -167,7 +215,7 @@ function editReadme() {
 
 function copyReadme() {
     navigator.clipboard.writeText(originalReadmeContent || "");
-    alert("README copied to clipboard");
+    showToast("✅ Copied to clipboard!");
 }
 
 function downloadReadme() {
@@ -177,14 +225,10 @@ function downloadReadme() {
     link.download = "README.md";
     link.click();
 }
+
 function showToast(message, duration = 3000) {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, duration);
+    setTimeout(() => { toast.classList.remove('show'); }, duration);
 }
-
-
-
