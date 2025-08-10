@@ -8,6 +8,8 @@
 
 This project is a web-based application designed to automatically generate professional `README.md` files for any public GitHub repository. It features a Python/FastAPI backend that leverages the Google Gemini API for content generation and a clean, interactive vanilla HTML, CSS, and JavaScript frontend. The application analyzes a repository's file structure and the content of key files to produce a detailed, accurate, and well-structured README.
 
+> **Note:** This tool currently only supports **public** GitHub repositories. Private repositories will not work.
+
 ## ✨ Features
 
 * **Dynamic Repo Analysis:** Fetches and displays the complete file structure of any public GitHub repository, correctly identifying the default branch (`main`, `master`, `beta`, etc.).
