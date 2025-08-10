@@ -4,6 +4,16 @@
 >
 > **No worries. This tool is for you. 😉**
 
+## 🌐 Live Demo
+
+This project is fully deployed and live! You can try it out here:
+
+**[➡️ Live README Generator](https://kool-k.github.io/Github-README.md-Generator-Website-Version-1-V1-/)**
+
+> **Note:** The backend is hosted on Render's free tier, so it may take 30-60 seconds for the server to "wake up" on the first request.
+
+---
+
 ## 📜 Description
 
 This project is a web-based application designed to automatically generate professional `README.md` files for any public GitHub repository. It features a Python/FastAPI backend that leverages the Google Gemini API for content generation and a clean, interactive vanilla HTML, CSS, and JavaScript frontend. The application analyzes a repository's file structure and the content of key files to produce a detailed, accurate, and well-structured README.
