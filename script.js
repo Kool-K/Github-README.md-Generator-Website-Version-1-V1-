@@ -1,15 +1,9 @@
-// script.js - Final Version with UX Improvements
 
 // Global variables to hold the state
 let originalReadmeContent = "";
 let analyzedFileContents = [];
 let currentRepoUrl = ""; // To track the currently loaded repo
 
-/**
- * The main workhorse function. Fetches all data for a given repo URL
- * and updates the UI accordingly.
- */
-// In script.js, replace the processRepository function with this final, robust version.
 
 async function processRepository(repoUrl) {
     currentRepoUrl = repoUrl; 
@@ -24,16 +18,13 @@ async function processRepository(repoUrl) {
     let branch;
 
     try {
-        // --- FIX: Robust URL Parsing ---
-        // Use the URL object to reliably get the path, regardless of http/https/www/.git
         const urlObject = new URL(repoUrl);
-        // urlObject.pathname gives "/Kool-K/MoodMuse.git"
         // We remove the leading slash and the trailing .git
         repoPath = urlObject.pathname.substring(1).replace(/\.git$/, "");
 
         const repoCheck = await fetch(`https://api.github.com/repos/${repoPath}`);
         if (!repoCheck.ok) {
-            // This handles both "Not Found" and rate limit errors from the API
+            //handles both "Not Found" and rate limit errors from the API
             const errorData = await repoCheck.json();
             const errorMessage = errorData.message || "Repository does not exist or is private";
             showToast(`🚫 ${errorMessage}`);
@@ -73,7 +64,7 @@ async function processRepository(repoUrl) {
         }
         return true;
     } catch (error) {
-        // This catch block handles network errors or if the URL is completely invalid
+        // This catch block handles network errors i.e if the URL is completely invalid
         console.error(error);
         repoStructureDiv.innerHTML = '<code>Error fetching repository data. Invalid URL?</code>';
         showToast("⚠️ Error fetching repository data. Check the URL and your connection.");
@@ -82,10 +73,7 @@ async function processRepository(repoUrl) {
     }
 }
 
-/**
- * --- UPDATED "Load Repo Info" button logic ---
- * This function now simply triggers a fresh fetch and display of the repo's original state.
- */
+
 async function fetchRepo() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
     if (!repoUrl) return showToast("Please enter a repository URL");
@@ -93,10 +81,6 @@ async function fetchRepo() {
     await processRepository(repoUrl);
 }
 
-/**
- * --- UPDATED "Generate README" button logic ---
- * This function ensures the latest data is fetched, then calls the AI.
- */
 async function generateReadmeWithBackend() {
     const repoUrl = document.getElementById('repoUrl').value.trim();
     if (!repoUrl) return showToast("Please enter a repository URL");
@@ -105,12 +89,12 @@ async function generateReadmeWithBackend() {
     const readmeDiv = document.getElementById('readme');
     const originalButtonHtml = generateBtn.innerHTML;
 
-    // Start the loading animation immediately for better UX
+    // Start loading animation immediately
     generateBtn.disabled = true;
     generateBtn.innerHTML = `<span class="spinner"></span>Processing...`;
     
-    // Always process the repo first to ensure data is fresh.
-    // The processRepository function will handle its own loading messages.
+    // process the repo first to ensure data is fresh.
+    // processRepository will handle its own loading messages.
     const success = await processRepository(repoUrl);
     if (!success) { 
         // If fetching failed, reset the button and stop.
@@ -120,7 +104,7 @@ async function generateReadmeWithBackend() {
     }
 
     try {
-        // Now that data is fetched, update button text to show generation phase
+        // After data is fetched, button text to show generation phase , spinner for loading
         generateBtn.innerHTML = `<span class="spinner"></span>Generating...`;
         readmeDiv.innerHTML = `<div class="loader-container"><span class="spinner" style="width: 3em; height: 3em; border-width: 4px;"></span><p>Generating your README, please wait...</p></div>`;
 
@@ -163,7 +147,6 @@ async function generateReadmeWithBackend() {
     }
 }
 
-// --- All helper functions below remain the same ---
 
 function renderMarkdown(content) {
     const readmeDiv = document.getElementById('readme');

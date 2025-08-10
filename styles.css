@@ -94,8 +94,7 @@ code {
     transform: translateY(0);
     pointer-events: auto;
 }
-/* styles.css */
-/* Add these new styles at the end of your file */
+
 
 /* Style for the disabled button state */
 button:disabled {
@@ -104,7 +103,7 @@ button:disabled {
   opacity: 0.7;
 }
 
-/* A simple spinner animation */
+/* simple spinner animation */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -118,10 +117,9 @@ button:disabled {
   border-top-color: #fff;
   width: 1em;
   height: 1em;
-  /* --- FIX #3: Corrected the animation property --- */
   animation: spin 1s linear infinite;
   margin-right: 8px;
-  vertical-align: middle; /* Aligns spinner with text */
+  vertical-align: middle; /* Aligns spinner + text */
 }
 
 /* Container for the README loading message */
@@ -130,7 +128,7 @@ button:disabled {
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  height: 200px; /* Give it some height */
+  height: 200px; 
   font-size: 1.2em;
   color: #888;
 }
@@ -164,7 +162,7 @@ button:disabled {
   line-height: 1.6;
 }
 
-/* Style for inline code `like this` */
+/* Style for inline code */
 #readme code {
   background-color: #161b22;
   color: #c9d1d9;
@@ -174,7 +172,7 @@ button:disabled {
   font-size: 0.9em;
 }
 
-/* Style for code blocks ```like this``` */
+/* Style for code blocks */
 #readme pre > code {
   display: block;
   padding: 1em;
@@ -203,9 +201,8 @@ footer {
 }
 
 footer a {
-  /* This is the new color for the link */
   color: #58a6ff; 
-  font-weight: bold; /* Making it bold also helps it stand out */
+  font-weight: bold; 
   text-decoration: none;
   transition: color 0.3s ease;
 }

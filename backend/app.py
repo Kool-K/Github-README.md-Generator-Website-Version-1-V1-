@@ -1,4 +1,3 @@
-# backend/app.py
 
 import os
 import google.generativeai as genai
@@ -44,7 +43,6 @@ class ReadmeRequest(BaseModel):
 async def generate_readme(data: ReadmeRequest):
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-    # --- FINAL PROMPT V4: CLEAR SEPARATION OF INSTRUCTIONS AND TEMPLATE ---
     prompt = f"""
 **// PART 1: THE BRIEFING & INSTRUCTIONS //**
 
@@ -109,7 +107,7 @@ Based on the instructions above and the source information below, generate the c
     else:
         prompt += "No file contents were provided. Base your analysis on the repository URL and file structure.\n"
 
-    # Add the unique placeholder for repo structure here
+    # A unique placeholder for repo structure
     prompt += "\n---REPO_STRUCTURE_PLACEHOLDER---\n"
 
     try:
