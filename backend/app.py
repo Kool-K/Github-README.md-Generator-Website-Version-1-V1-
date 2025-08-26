@@ -137,3 +137,8 @@ Based on the instructions above and the source information below, generate the c
     except Exception as e:
         print(f"An error occurred: {e}")
         raise HTTPException(status_code=500, detail=f"An error occurred with the Gemini API: {str(e)}")
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
