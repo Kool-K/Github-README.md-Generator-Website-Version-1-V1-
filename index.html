@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>README Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <h1>README Generator</h1>
+    <div class="input-container">
+      <input
+        type="text"
+        id="repoUrl"
+        placeholder="Enter GitHub repo URL (e.g. https://github.com/user/repo.git)"
+      />
+      <button onclick="fetchRepo()">Load Repo Info</button>
+      <button id="generate-btn" onclick="generateReadmeWithBackend()">
+        Generate README
+      </button>
+    </div>
+    <div class="section">
+      <h2>📂 Repository Structure</h2>
+      <pre id="repo-structure"><code>Waiting for repository data...</code></pre>
+    </div>
+
+    <div class="section">
+      <h2>📜 README</h2>
+      <div class="readme-toolbar">
+        <button onclick="editReadme()">Edit</button>
+        <button onclick="copyReadme()">Copy</button>
+        <button onclick="downloadReadme()">Download</button>
+      </div>
+      <div id="readme" class="readme-display">No README found yet.</div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+    <footer>
+      <p>
+        Made by <a href="https://github.com/Kool-K" target="_blank" rel="noopener noreferrer">Ketaki Kulkarni</a>
+      </p>
+    </footer>
+  </body>
+</html>
+

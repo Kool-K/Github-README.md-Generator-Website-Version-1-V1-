@@ -1,0 +1,18 @@
+# --- Secrets ---
+# This is the line you asked about. It ignores the .env file in the backend folder.
+backend/.env
+
+# --- Python Virtual Environment ---
+# Ignores the entire venv folder inside the backend directory.
+venv/
+
+# --- Python Cache ---
+# Ignores any __pycache__ folders that Python creates.
+**/__pycache__/
+
+# --- OS-specific files (Good practice) ---
+# For macOS users
+.DS_Store
+
+# For Windows users
+Thumbs.db
